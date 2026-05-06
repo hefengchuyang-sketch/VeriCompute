@@ -324,6 +324,7 @@ class ComputeTask:
     started_at: float = 0.0
     completed_at: float = 0.0
     timeout_at: float = 0.0       # 超时时间
+    challenge_window_end: float = 0.0 # 【V1.0】争议公示期结束时间
     
     def to_dict(self) -> Dict:
         return {
@@ -361,6 +362,7 @@ class ComputeTask:
             "started_at": self.started_at,
             "completed_at": self.completed_at,
             "timeout_at": self.timeout_at,
+            "challenge_window_end": self.challenge_window_end,
         }
 
 
@@ -466,6 +468,10 @@ class ComputeScheduler:
     HEARTBEAT_EXTEND_GRACE = 120  # 心跳延展宽限期（秒）：矿工存活时额外延长超时
     WATCHDOG_INTERVAL = 30        # 守护巡检间隔（秒）
     MAX_TASK_RETRIES = 3          # 任务最大重试次数
+    
+    # 【V1.0 - 挑战期与资金托管时长】
+    DISPUTE_WINDOW_SECONDS = 3600 # 结果提交后的锁定期，1小时内允许别的节点挑战
+    
     HIGH_VALUE_THRESHOLD = 10.0
     LOW_REP_THRESHOLD = 0.35
     CONSENSUS_VARIANCE_THRESHOLD = 0.0
@@ -1098,8 +1104,8 @@ class ComputeScheduler:
         except (json.JSONDecodeError, ValueError, TypeError):
             pass
 
-        # 获取所有可用矿工（包括正在挖矿的 - 他们不知道会切换到付费任务）
-        available = self._get_available_miners(sector, min_memory_gb=min_memory_gb)
+        # 获取所有可用矿工，应用惩罚穿透安全限额 (Slashing Bound)
+        available = self._get_available_miners(sector, min_memory_gb=min_memory_gb, task_value=task.total_payment)
         if not available:
             return False, "当前无可用矿工可执行盲任务"
         # 优先选择高信任度矿工（陷阱开销更低）
@@ -1171,7 +1177,7 @@ class ComputeScheduler:
         sector = task.sector
         required = task.redundancy
         
-        # 解析任务的内存需求
+        # 解析任务的内存需求与价值 (Slashing Bounds)
         min_memory_gb = 0.0
         try:
             task_info = json.loads(task.task_data)
@@ -1180,11 +1186,11 @@ class ComputeScheduler:
         except (json.JSONDecodeError, ValueError, TypeError):
             pass
 
-        # 获取所有可用矿机
+        # 获取所有可用矿机，应用惩罚穿透安全限额 (Slashing Bound)
         voluntary_miners = self._get_available_miners(
-            sector, mode=MinerMode.VOLUNTARY, min_memory_gb=min_memory_gb)
+            sector, mode=MinerMode.VOLUNTARY, min_memory_gb=min_memory_gb, task_value=task.total_payment)
         forced_miners = self._get_available_miners(
-            sector, mode=MinerMode.FORCED, min_memory_gb=min_memory_gb)
+            sector, mode=MinerMode.FORCED, min_memory_gb=min_memory_gb, task_value=task.total_payment)
         all_miners = voluntary_miners + forced_miners
 
         # v2 调度评分：异构能力 + 信誉置信惩罚 + 延迟惩罚
@@ -1226,8 +1232,8 @@ class ComputeScheduler:
         
         return selected
     
-    def _get_available_miners(self, sector: str, mode: MinerMode = None, min_memory_gb: float = 0.0) -> List[MinerNode]:
-        """获取可用矿机列表"""
+    def _get_available_miners(self, sector: str, mode: Optional[MinerMode] = None, min_memory_gb: float = 0.0, task_value: float = 0.0) -> List[MinerNode]:
+        """获取可用矿机列表，包含安全风控(Slashing Bounds)过滤"""
         with self._conn() as conn:
             query = """
                 SELECT miner_data FROM miners
@@ -1248,6 +1254,11 @@ class ComputeScheduler:
                 miner = MinerNode.from_dict(json.loads(row['miner_data']))
                 # 检查内存是否满足
                 if miner.gpu_memory < min_memory_gb:
+                    continue
+                # 【V1.0 - 惩罚穿透安全限额 (Slashing Bound) 过滤】
+                # 若任务价值过高而节点质押不足，则不允许分配
+                if task_value > 0 and task_value > (miner.stake * self.SLASH_RATIO):
+                    logger.debug(f"[风控] 矿工 {miner.miner_id} 质押 {miner.stake} 不足承接价值 {task_value} 的任务.")
                     continue
                 # 检查心跳超时
                 if time.time() - miner.last_heartbeat < self.HEARTBEAT_TIMEOUT:
@@ -1491,6 +1502,7 @@ class ComputeScheduler:
                     task.final_result = result_hash
                     task.status = TaskStatus.COMPLETED
                     task.completed_at = time.time()
+                    task.challenge_window_end = time.time() + self.DISPUTE_WINDOW_SECONDS
                     
                     # 提升矿工评分
                     miner = self.get_miner(miner_id)
@@ -1554,7 +1566,7 @@ class ComputeScheduler:
         for out in outputs:
             result_counts[out] = result_counts.get(out, 0) + 1
 
-        majority_result = max(result_counts, key=result_counts.get)
+        majority_result = max(result_counts.items(), key=lambda item: item[1])[0]
         majority_count = result_counts[majority_result]
         verification_ok = False
         verification_mode = (task.verification_mode or "consensus").lower()
@@ -1574,6 +1586,8 @@ class ComputeScheduler:
             task.final_result = majority_result
             task.status = TaskStatus.COMPLETED
             task.completed_at = time.time()
+            task.challenge_window_end = time.time() + self.DISPUTE_WINDOW_SECONDS
+            task.fee_breakdown["challenge_window"] = self.DISPUTE_WINDOW_SECONDS
 
             # 经济分配：k=1 全额给执行者；k>=2 按 70/30 给执行者和验证者
             correct_miners = [mid for mid, result in task.results.items() if result == majority_result]
@@ -1642,7 +1656,7 @@ class ComputeScheduler:
         counts: Dict[str, int] = {}
         for out in votes:
             counts[out] = counts.get(out, 0) + 1
-        winner = max(counts, key=counts.get)
+        winner = max(counts.items(), key=lambda item: item[1])[0]
 
         if counts[winner] < 2:
             task.fee_breakdown["dispute_resolution"] = "unresolved"
@@ -1678,6 +1692,7 @@ class ComputeScheduler:
         - 0.5% 直接销毁（通缩机制）
         - 0.3% 区块矿工激励
         - 0.2% 基金会多签钱包（运维服务）
+        注意：实际结算应在 block_chain 层面等待 challenge_window_end 公示期结束后进行。此处仅更新资产凭证以防超前消费。
         """
         if task.total_payment <= 0:
             return
@@ -1949,6 +1964,8 @@ if __name__ == "__main__":
     # 3. 查看任务状态
     print("\n[3] 任务状态...")
     task = scheduler.get_task("task_001")
+    if task is None:
+        raise RuntimeError("任务不存在: task_001")
     print(f"    分配矿工: {task.assigned_miners}")
     print(f"    盲模式: {task.fee_breakdown.get('blind_mode', False)}")
     print(f"    陷阱数: {task.fee_breakdown.get('trap_count', 0)}")
@@ -1977,6 +1994,8 @@ if __name__ == "__main__":
     # 7. 验证后状态
     print("\n[7] 验证后状态...")
     task = scheduler.get_task("task_001")
+    if task is None:
+        raise RuntimeError("任务不存在: task_001")
     print(f"    状态: {task.status.value}")
     print(f"    最终结果: {task.final_result}")
     print(f"    矿工收益: {task.miner_payments}")

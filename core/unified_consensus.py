@@ -313,8 +313,8 @@ class UnifiedConsensus:
     def exchange_engine(self):
         """兑换引擎"""
         if self._exchange_engine is None:
-            from core.dual_witness_exchange import DualWitnessExchange
-            self._exchange_engine = DualWitnessExchange(
+            from core.dual_witness_exchange import OptimisticDualWitnessExchange
+            self._exchange_engine = OptimisticDualWitnessExchange(
                 db_path=f"{self.db_dir}/exchange.db",
                 testnet=self.testnet
             )

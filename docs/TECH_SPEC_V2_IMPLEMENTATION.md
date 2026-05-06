@@ -81,6 +81,17 @@ Primary implementation is integrated into `core/compute_scheduler.py` with backw
 - Reputation has mandatory decay path.
 - Failed verification has direct economic penalty path.
 
+## Core Security & Architecture Enhancements (V2.1)
+
+1. **Dispute Windows (挑战期机制):** 
+   - `ComputeTask` now features a `challenge_window_end` timeout. Upon result submission and verification, tasks enter a lock period (e.g. 3600s), enabling third-party dispute submission before final settlement/payout.
+2. **WASM Determinism (确定性执行):** 
+   - Non-deterministic tasks are now explicitly supported via a `requires_determinism` flag in `ConfidentialTask`, mapped to `wasm_wasi` execution environments to guarantee globally verifiable reproducibility.
+3. **Slashing Bounds (抵押边界限制):**
+   - The scheduler dynamically bounds task delegation limits via `max_task_value_ratio`. Miners are restricted from taking tasks where the payout exceeds a safe ratio of their staked collateral, mitigating "nothing-at-stake" attacks on high-value payloads.
+4. **TCB Revocation (TCB 吊销机制):**
+   - `TEEManager` now supports a dynamic Certificate Revocation List (CRL) via `_revoked_tcbs`. Incoming Node TCBs (e.g., vulnerable SGX microcode versions) are matched against this list to prevent compromised hardware from joining the compute cluster.
+
 ## Attack Model Mapping
 
 | Attack | Defense in Current Code |

@@ -8,11 +8,14 @@
   - `main.py`: 节点启动主入口，负责安全预检、组件装配、RPC 启动。
   - `start.bat` / `start.ps1`: 本地启动脚本。
   - `docker-compose.yml` / `Dockerfile`: 容器化运行入口。
+  - `scripts/start_unified_gateway.py`: 统一 RPC + V3 API 网关的推荐启动器。
+  - `scripts/pre_launch_check.py`: 上线前统一检查脚本，验证语法、依赖、配置和目录结构。
 
 - 服务层
   - `core/rpc_service.py`: NodeRPCService 业务实现（含订单簿、期货、计费、TEE 等方法）。
   - `core/rpc/`: RPC 基础模型与服务端封装。
   - `core/rpc_handlers/`: 各业务域 RPC 注册与方法拆分（权限与路由汇总）。
+  - `api/unified_gateway.py`: 统一 API 网关实现，整合 RPC 与 V3 REST 接口。
 
 - 领域层
   - 共识与链: `core/consensus.py`, `core/unified_consensus.py`, `core/transaction.py`, `core/utxo_store.py`
@@ -32,6 +35,13 @@
 2. `POUWNode.initialize()` 先执行安全预检（生产模式 fail-closed）
 3. 初始化存储、TLS、钱包、共识、RPC
 4. 对外暴露 RPC 与前端静态资源
+
+统一网关的独立启动链路：
+
+1. 执行 `scripts/start_unified_gateway.py`
+2. 脚本导入 `api/unified_gateway.py`
+3. Flask 网关暴露 `/rpc`、`/api/v3/*`、`/api/unified/query`
+4. 测试脚本通过 `tests/test_unified_gateway.py` 回归关键接口
 
 关键目标:
 - 生产环境证书与安全基线不满足时拒绝启动。

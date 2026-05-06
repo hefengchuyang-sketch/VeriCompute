@@ -1,0 +1,208 @@
+{
+  "version": "1.0",
+  "block_height": 0,
+  "timestamp": 1778061997.3978562,
+  "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "merkle_root": "",
+  "difficulty": 4,
+  "nonce": 0,
+  "genesis_allocations": {
+    "H100": {
+      "H100_DEV_TEAM": {
+        "amount": 2100000.0,
+        "vesting": {
+          "type": "linear",
+          "duration": 31536000,
+          "cliff": 7776000
+        }
+      },
+      "H100_EARLY_TESTERS": {
+        "amount": 1050000.0,
+        "count": 100,
+        "per_tester": 10500.0,
+        "vesting": {
+          "type": "immediate",
+          "duration": 0
+        }
+      },
+      "H100_COMMUNITY_FUND": {
+        "amount": 2100000.0,
+        "vesting": {
+          "type": "dao_controlled",
+          "duration": 0
+        }
+      },
+      "supply_info": {
+        "max_supply": 21000000,
+        "genesis_supply": 5250000.0,
+        "genesis_percentage": 25.0,
+        "mining_pool": 15750000.0,
+        "mining_percentage": 75.0,
+        "breakdown": {
+          "H100_DEV_TEAM": 2100000.0,
+          "H100_EARLY_TESTERS": 1050000.0,
+          "H100_COMMUNITY_FUND": 2100000.0
+        }
+      }
+    },
+    "RTX4090": {
+      "RTX4090_DEV_TEAM": {
+        "amount": 2100000.0,
+        "vesting": {
+          "type": "linear",
+          "duration": 31536000,
+          "cliff": 7776000
+        }
+      },
+      "RTX4090_EARLY_TESTERS": {
+        "amount": 1050000.0,
+        "count": 100,
+        "per_tester": 10500.0,
+        "vesting": {
+          "type": "immediate",
+          "duration": 0
+        }
+      },
+      "RTX4090_COMMUNITY_FUND": {
+        "amount": 2100000.0,
+        "vesting": {
+          "type": "dao_controlled",
+          "duration": 0
+        }
+      },
+      "supply_info": {
+        "max_supply": 21000000,
+        "genesis_supply": 5250000.0,
+        "genesis_percentage": 25.0,
+        "mining_pool": 15750000.0,
+        "mining_percentage": 75.0,
+        "breakdown": {
+          "RTX4090_DEV_TEAM": 2100000.0,
+          "RTX4090_EARLY_TESTERS": 1050000.0,
+          "RTX4090_COMMUNITY_FUND": 2100000.0
+        }
+      }
+    },
+    "RTX3080": {
+      "RTX3080_DEV_TEAM": {
+        "amount": 2100000.0,
+        "vesting": {
+          "type": "linear",
+          "duration": 31536000,
+          "cliff": 7776000
+        }
+      },
+      "RTX3080_EARLY_TESTERS": {
+        "amount": 1050000.0,
+        "count": 100,
+        "per_tester": 10500.0,
+        "vesting": {
+          "type": "immediate",
+          "duration": 0
+        }
+      },
+      "RTX3080_COMMUNITY_FUND": {
+        "amount": 2100000.0,
+        "vesting": {
+          "type": "dao_controlled",
+          "duration": 0
+        }
+      },
+      "supply_info": {
+        "max_supply": 21000000,
+        "genesis_supply": 5250000.0,
+        "genesis_percentage": 25.0,
+        "mining_pool": 15750000.0,
+        "mining_percentage": 75.0,
+        "breakdown": {
+          "RTX3080_DEV_TEAM": 2100000.0,
+          "RTX3080_EARLY_TESTERS": 1050000.0,
+          "RTX3080_COMMUNITY_FUND": 2100000.0
+        }
+      }
+    },
+    "CPU": {
+      "CPU_DEV_TEAM": {
+        "amount": 2100000.0,
+        "vesting": {
+          "type": "linear",
+          "duration": 31536000,
+          "cliff": 7776000
+        }
+      },
+      "CPU_EARLY_TESTERS": {
+        "amount": 1050000.0,
+        "count": 100,
+        "per_tester": 10500.0,
+        "vesting": {
+          "type": "immediate",
+          "duration": 0
+        }
+      },
+      "CPU_COMMUNITY_FUND": {
+        "amount": 2100000.0,
+        "vesting": {
+          "type": "dao_controlled",
+          "duration": 0
+        }
+      },
+      "supply_info": {
+        "max_supply": 21000000,
+        "genesis_supply": 5250000.0,
+        "genesis_percentage": 25.0,
+        "mining_pool": 15750000.0,
+        "mining_percentage": 75.0,
+        "breakdown": {
+          "CPU_DEV_TEAM": 2100000.0,
+          "CPU_EARLY_TESTERS": 1050000.0,
+          "CPU_COMMUNITY_FUND": 2100000.0
+        }
+      }
+    },
+    "GENERAL": {
+      "GENERAL_DEV_TEAM": {
+        "amount": 2100000.0,
+        "vesting": {
+          "type": "linear",
+          "duration": 31536000,
+          "cliff": 7776000
+        }
+      },
+      "GENERAL_EARLY_TESTERS": {
+        "amount": 1050000.0,
+        "count": 100,
+        "per_tester": 10500.0,
+        "vesting": {
+          "type": "immediate",
+          "duration": 0
+        }
+      },
+      "GENERAL_COMMUNITY_FUND": {
+        "amount": 2100000.0,
+        "vesting": {
+          "type": "dao_controlled",
+          "duration": 0
+        }
+      },
+      "supply_info": {
+        "max_supply": 21000000,
+        "genesis_supply": 5250000.0,
+        "genesis_percentage": 25.0,
+        "mining_pool": 15750000.0,
+        "mining_percentage": 75.0,
+        "breakdown": {
+          "GENERAL_DEV_TEAM": 2100000.0,
+          "GENERAL_EARLY_TESTERS": 1050000.0,
+          "GENERAL_COMMUNITY_FUND": 2100000.0
+        }
+      }
+    }
+  },
+  "chain_params": {
+    "target_block_time": 30,
+    "max_supply_per_sector": 21000000,
+    "halving_interval": 10000,
+    "treasury_rate": 0.03
+  },
+  "genesis_message": "POUW-Chain Genesis Block - Proof of Useful Work"
+}

@@ -245,6 +245,10 @@ class ConfidentialTask:
     min_tee_version: str = ""
     require_attestation: bool = True
     
+    # 确定性执行强制（e.g. WASM/WASI拦截非确定性外部调用）
+    enforce_determinism: bool = True
+    execution_engine: str = "wasm_wasi"
+    
     # 验证要求
     verification_level: VerificationLevel = VerificationLevel.STANDARD
     redundancy_count: int = 1              # 冗余执行数
@@ -394,7 +398,11 @@ class EconomicModel:
     accuracy_multiplier: float = 1.0
     violation_factor: float = 0.3  # slash 比例
     min_stake: float = 100.0
-    challenge_window_seconds: float = 3600  # 1小时
+    challenge_window_seconds: float = 3600  # 1小时公示期
+    
+    # 惩罚穿透 (Slashing Bound) = 1.5 
+    # 即任务价值不能超过节点抵押金的 1/1.5 = 66%
+    max_task_value_ratio: float = 0.66  
 
     def compute_reward(self, base: float, rep: float, acc: float) -> float:
         return base * rep * acc
@@ -430,6 +438,13 @@ class TEEManager:
         TEEType.AZURE_SGX: 0.20,           # +20%
     }
     
+    # 漏洞硬件版本黑名单 CRL (全局禁用策略)
+    # 当厂商爆出 SGX/SEV 新漏洞时，可以直接通过治理拦截低版本 firmware。
+    _revoked_tcbs: Dict[TEEType, List[str]] = {
+        TEEType.INTEL_SGX: ["1.0", "1.1"], # 比如 plundervolt/sgaxe 漏洞的固件
+        TEEType.AMD_SEV: ["0.9"],
+    }
+    
     def __init__(self):
         self.nodes: Dict[str, TEENode] = {}
         self.attestation_reports: Dict[str, AttestationReport] = {}
@@ -457,6 +472,11 @@ class TEEManager:
         capabilities: Optional[Dict[str, Any]] = None,
     ) -> TEENode:
         """注册 TEE 节点"""
+        # TCB 全局撤销检查
+        if version in self._revoked_tcbs.get(tee_type, []):
+            logger.warning(f"[TEE] 拒绝注册: 硬件版本 {version} ({tee_type}) 已被吊销 CRL.")
+            raise ValueError(f"TEE 硬件版本 {version} 存在安全漏洞已失效，请更新微码或固件")
+        
         with self._lock:
             capability = TEECapability(
                 tee_type=tee_type,

@@ -189,13 +189,13 @@ def _complete_exchange(self, conn, request):
 
 ---
 
-### D-10 | MODERATE | Testnet 模式下双见证降级为单见证
+### D-10 | MODERATE | Testnet 模式兼容参数仍需谨慎
 
 | 字段 | 内容 |
 |------|------|
 | **Category** | Economic / Configuration |
 | **File/Line** | `core/dual_witness_exchange.py` 初始化处 |
-| **Description** | `DualWitnessExchange(testnet=True)` 将 `required_witnesses` 从 2 降为 1。如果生产环境误设 testnet=True（或攻击者通过配置注入），整个双见证安全保障将被绕过。 |
+| **Description** | 兑换模块保留了 `testnet` 兼容参数，并会在测试环境下将 `required_witnesses` 降为 1。生产环境如果误用该参数，仍然会削弱双见证约束。 |
 
 **Fix Approach**: 生产构建应通过编译期/环境变量硬编码禁止 testnet 模式，或至少在启动时有明显的安全警告和确认步骤。
 

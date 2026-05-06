@@ -1,9 +1,10 @@
 """上线前全面检查脚本"""
 import os, sys, py_compile, importlib, yaml, traceback
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-os.chdir(ROOT)
-sys.path.insert(0, ROOT)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+os.chdir(PROJECT_ROOT)
+sys.path.insert(0, PROJECT_ROOT)
 
 print("=" * 60)
 print("上线前全面检查")
@@ -53,20 +54,19 @@ for rf in root_files:
 print("\n--- 2. 关键模块导入 ---")
 critical_modules = [
     "core.consensus",
-    "core.blockchain",
-    "core.block",
     "core.crypto",
-    "core.miner",
-    "core.network",
+    "core.unified_consensus",
+    "core.pouw_chain_v3",
+    "core.pouw_executor",
     "core.rpc_service",
-    "core.treasury",
     "core.treasury_manager",
     "core.dao_treasury",
     "core.pouw_scoring",
     "core.sector_coin",
     "core.compute_market_v3",
-    "core.auth",
     "core.account",
+    "core.wallet",
+    "core.security",
 ]
 import_failures = []
 for mod in critical_modules:
@@ -85,7 +85,7 @@ try:
     check("config.yaml 可解析", True)
     
     # 关键字段
-    required_sections = ["network", "consensus", "mining", "rpc"]
+    required_sections = ["network", "consensus", "mining", "wallet", "storage"]
     for sec in required_sections:
         check(f"config.yaml 包含 [{sec}]", sec in cfg, "缺失")
     
@@ -98,7 +98,7 @@ try:
     check(f"财库税率配置: {tr}", tr is not None and 0 < tr < 1, "未配置或范围异常")
     
     # RPC 安全
-    rpc_cfg = cfg.get("rpc", {})
+    rpc_cfg = cfg.get("rpc", {}) or cfg.get("network", {}).get("rpc", {})
     rpc_host = rpc_cfg.get("host", "0.0.0.0")
     rpc_port = rpc_cfg.get("port", 0)
     check(f"RPC 端口: {rpc_port}", rpc_port > 0, "未配置")
@@ -163,7 +163,7 @@ except:
 
 # ========== 5. 数据目录 ==========
 print("\n--- 5. 数据目录 ---")
-data_dir = os.path.join(ROOT, "data")
+data_dir = os.path.join(PROJECT_ROOT, "data")
 if os.path.isdir(data_dir):
     db_files = [f for f in os.listdir(data_dir) if f.endswith(".db")]
     check(f"data/ 目录存在 ({len(db_files)} 个数据库)", True)
@@ -197,7 +197,7 @@ except Exception as e:
     check("财库税率一致性", False, str(e))
 
 # 检查创世块
-genesis_files = [f for f in os.listdir(ROOT) if f.startswith("genesis") and f.endswith(".json")]
+genesis_files = [f for f in os.listdir(PROJECT_ROOT) if f.startswith("genesis") and f.endswith(".json")]
 for gf in genesis_files:
     check(f"创世块文件: {gf}", True)
 
@@ -205,16 +205,16 @@ for gf in genesis_files:
 print("\n--- 8. 部署文件 ---")
 deploy_files = ["Dockerfile", "docker-compose.yml", "requirements.txt", "start.bat", "start.ps1"]
 for df in deploy_files:
-    check(f"{df}", os.path.exists(df))
+    check(f"{df}", os.path.exists(os.path.join(PROJECT_ROOT, df)))
 
 # ========== 9. main.py 入口检查 ==========
 print("\n--- 9. main.py 入口 ---")
 try:
-    with open("main.py", "r", encoding="utf-8") as f:
+    with open(os.path.join(PROJECT_ROOT, "main.py"), "r", encoding="utf-8") as f:
         main_content = f.read()
     check("main.py 存在且可读", True)
     check("包含 POUWNode 类", "class POUWNode" in main_content)
-    check("包含 start()", "def start(" in main_content or "async def start(" in main_content)
+    check("包含 main()", "def main(" in main_content or "async def main(" in main_content)
     check("包含优雅关闭", "graceful" in main_content.lower() or "shutdown" in main_content.lower())
     check("包含扩展模块初始化", "_init_extended_modules" in main_content)
 except Exception as e:
@@ -222,7 +222,7 @@ except Exception as e:
 
 # ========== 10. 前端构建 ==========
 print("\n--- 10. 前端 ---")
-frontend_dist = os.path.join(ROOT, "frontend", "dist")
+frontend_dist = os.path.join(PROJECT_ROOT, "frontend", "dist")
 if os.path.isdir(frontend_dist):
     html = os.path.join(frontend_dist, "index.html")
     check("前端已构建 (dist/)", os.path.exists(html))
