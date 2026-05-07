@@ -28,6 +28,13 @@ def main():
     parser = argparse.ArgumentParser(description="Start the unified POUW API gateway")
     parser.add_argument("--host", default="0.0.0.0", help="Gateway listen host")
     parser.add_argument("--port", type=int, default=8000, help="Gateway listen port")
+    parser.add_argument("--data-dir", default="./data_v3", help="V3 chain data directory")
+    parser.add_argument(
+        "--cors-origins",
+        nargs="*",
+        default=["http://localhost:3000", "http://127.0.0.1:3000"],
+        help="Allowed CORS origin(s) for the gateway"
+    )
     args = parser.parse_args()
 
     print("="*60)
@@ -38,7 +45,12 @@ def main():
     from api.unified_gateway import start_unified_gateway
 
     logger.info(f"Starting unified gateway on {args.host}:{args.port}")
-    start_unified_gateway(host=args.host, port=args.port)
+    start_unified_gateway(
+        host=args.host,
+        port=args.port,
+        v3_data_dir=args.data_dir,
+        cors_origins=args.cors_origins
+    )
 
 
 if __name__ == '__main__':

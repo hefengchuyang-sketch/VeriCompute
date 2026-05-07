@@ -14,7 +14,7 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import time
 
 # 导入现有服务
@@ -31,7 +31,9 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app)  # 启用CORS
+
+
+gateway: Optional['UnifiedAPIGateway'] = None
 
 
 # ============== 统一API网关 ==============
@@ -46,15 +48,21 @@ class UnifiedAPIGateway:
     - SDK API（现有）
     """
 
-    def __init__(self):
+    def __init__(self, v3_data_dir: str = "./data_v3", cors_origins: Optional[List[str]] = None):
         # 现有服务
         self.rpc_service = NodeRPCService()
 
         # V3.0服务
         if HAS_V3:
-            self.v3_chain = get_pouw_chain("./data_v3")
+            self.v3_chain = get_pouw_chain(v3_data_dir)
         else:
             self.v3_chain = None
+
+        # CORS 配置
+        self.cors_origins = cors_origins or [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000"
+        ]
 
         # 统计
         self.request_count = 0
@@ -498,6 +506,8 @@ def api_docs():
 def start_unified_gateway(
     host: str = '0.0.0.0',
     port: int = 8000,
+    v3_data_dir: str = './data_v3',
+    cors_origins: Optional[List[str]] = None,
     **dependencies
 ):
     """
@@ -506,14 +516,22 @@ def start_unified_gateway(
     Args:
         host: 监听地址
         port: 监听端口
+        v3_data_dir: V3链数据目录
+        cors_origins: 允许的 CORS 来源列表
         **dependencies: 依赖组件（blockchain, mempool等）
     """
-    # 设置依赖
+    global gateway
+
+    # 初始化网关
+    gateway = UnifiedAPIGateway(v3_data_dir=v3_data_dir, cors_origins=cors_origins)
     gateway.set_dependencies(**dependencies)
 
     # 启动V3.0链（如果可用）
     if gateway.v3_chain:
         gateway.v3_chain.start()
+
+    # 应用 CORS 配置
+    CORS(app, origins=gateway.cors_origins, supports_credentials=True)
 
     # 启动Flask服务
     logger.info(f"Starting Unified API Gateway on {host}:{port}")

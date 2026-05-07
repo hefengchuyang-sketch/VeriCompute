@@ -3078,7 +3078,7 @@ class NodeRPCService:
                             ws,
                             block_height=self.current_height,
                             block_hash=f"0x{request.exchange_id}",
-                            signature="dev_auto_witness"
+                            signature=f"dev_auto_witness_{ws}_{self.current_height}"
                         )
                 # else: 生产环境不自动见证，需等待真实板块区块见证
                 

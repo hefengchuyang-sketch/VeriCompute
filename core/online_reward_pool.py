@@ -81,17 +81,12 @@ class SectorOnlineRewardPool:
     # 资金来源比例
     BLOCK_REWARD_RATIO = 0.02  # 区块奖励2%（降低，确保任务收益更高）
 
-    def __init__(self, sector: str, data_dir: str = "./data", genesis_time: float = None):
-        # 冷启动支持
-        if genesis_time is None:
-            genesis_time = time.time()
-
-        from core.cold_start import ColdStartManager
-        self.cold_start = ColdStartManager(genesis_time)
-
     # 启动资金（前3个月）
     STARTUP_FUND_EPOCHS = 2160  # 90天 = 2160小时
     STARTUP_FUND_PER_EPOCH = 50.0  # 每小时50板块币
+
+    # 最低质押（用于计算贡献权重）
+    MIN_STAKE = 5.0
 
     def __init__(self, sector: str, data_dir: str = "./data", genesis_time: float = None):
         self.sector = sector
@@ -282,6 +277,28 @@ class SectorOnlineRewardPool:
             logger.info(f"[{self.sector}] Added funding: {amount} from {source_type}, approved by {approved_by}")
             return source_id
 
+    def inject_block_reward(self, block_reward: float, block_height: int):
+        """
+        注入区块奖励到奖励池
+
+        Args:
+            block_reward: 区块总奖励
+            block_height: 区块高度
+        """
+        reward_amount = block_reward * self.BLOCK_REWARD_RATIO
+
+        if reward_amount <= 0:
+            return
+
+        source_id = self.add_funding(
+            amount=reward_amount,
+            source_type="block_reward",
+            approved_by=f"BLOCK_{block_height}",
+            memo=f"Block reward injection from block {block_height}"
+        )
+
+        logger.info(f"[{self.sector}] Injected block reward: {reward_amount} from block {block_height}")
+
     def register_miner(
         self,
         miner_id: str,
@@ -291,11 +308,15 @@ class SectorOnlineRewardPool:
         stake_amount: float = 0.0
     ) -> Tuple[bool, str]:
         """注册矿工"""
+        # 检查是否已注册
+        if miner_id in self.online_miners:
+            return False, "Miner already registered and online"
+
         # 动态获取最低质押要求（支持冷启动）
         if self.cold_start:
             min_stake = self.cold_start.get_min_stake_requirement(self.sector)
         else:
-            min_stake = 5.0  # 默认值
+            min_stake = self.MIN_STAKE
 
         if stake_amount < min_stake:
             phase = self.cold_start.get_current_phase() if self.cold_start else 3
@@ -342,6 +363,10 @@ class SectorOnlineRewardPool:
 
             miner = self.online_miners[miner_id]
             now = time.time()
+
+            # 防止恶意频繁心跳（最小间隔30秒）
+            if miner.last_heartbeat > 0 and (now - miner.last_heartbeat) < 30:
+                return False, "Heartbeat too frequent"
 
             if miner.last_heartbeat > 0:
                 duration = now - miner.last_heartbeat
@@ -512,51 +537,6 @@ class SectorOnlineRewardPool:
 
         conn.close()
         return history
-
-    def get_miner_stats(self, miner_id: str) -> Optional[Dict]:
-        """获取单个矿工的奖励池统计信息。"""
-        with self.lock:
-            miner = self.online_miners.get(miner_id)
-            if miner:
-                return {
-                    "miner_id": miner.miner_id,
-                    "address": miner.address,
-                    "sector": miner.sector,
-                    "compute_power": miner.compute_power,
-                    "gpu_count": miner.gpu_count,
-                    "stake_amount": miner.stake_amount,
-                    "total_online_time": miner.total_online_time,
-                    "total_earned": miner.total_earned,
-                    "last_heartbeat": miner.last_heartbeat,
-                }
-
-            conn = sqlite3.connect(str(self.db_path))
-            try:
-                row = conn.execute(
-                    """
-                    SELECT miner_id, address, sector, compute_power, gpu_count,
-                           stake_amount, total_online_time, total_earned, last_seen
-                    FROM miners
-                    WHERE miner_id = ?
-                    """,
-                    (miner_id,)
-                ).fetchone()
-                if not row:
-                    return None
-
-                return {
-                    "miner_id": row[0],
-                    "address": row[1],
-                    "sector": row[2],
-                    "compute_power": row[3],
-                    "gpu_count": row[4],
-                    "stake_amount": row[5],
-                    "total_online_time": row[6],
-                    "total_earned": row[7],
-                    "last_heartbeat": row[8],
-                }
-            finally:
-                conn.close()
 
     def get_miner_stats(self, miner_id: str) -> Optional[Dict]:
         """获取单个矿工的奖励池统计信息。"""

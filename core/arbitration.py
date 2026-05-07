@@ -489,33 +489,16 @@ if __name__ == "__main__":
         arbitration_period=5,  # 5秒仲裁期（测试用）
     )
     
-    # 模拟账户
-    class MockAccount:
-        def __init__(self, balance=100):
-            self.balance = balance
-            self.staked = 0
-        
-        def stake(self, amount, reason):
-            if self.balance >= amount:
-                self.balance -= amount
-                self.staked += amount
-                return True
-            return False
-        
-        def unstake(self, amount, reason):
-            self.staked -= amount
-            self.balance += amount
-        
-        def credit_main(self, amount):
-            self.balance += amount
+    # Create real accounts instead of mock accounts
+    from core.account import Account
     
-    renter = MockAccount(100)
-    miner = MockAccount(50)
+    renter = Account(address="renter_1", balance=100.0)
+    miner = Account(address="miner_1", balance=50.0)
     
     arb.register_account("renter_1", renter)
     arb.register_account("miner_1", miner)
     
-    # 开始仲裁
+    # Start arbitration
     arb_record = arb.start_arbitration(
         task_id="task_001",
         renter_id="renter_1",
@@ -524,9 +507,9 @@ if __name__ == "__main__":
         coin_type="H100_COIN",
     )
     
-    print(f"\n仲裁状态: {arb.get_arbitration_status('task_001')}")
-    print(f"租用方余额: {renter.balance}, 质押: {renter.staked}")
-    print(f"矿工余额: {miner.balance}, 质押: {miner.staked}")
+    print(f"\nArbitration status: {arb.get_arbitration_status('task_001')}")
+    print(f"Renter balance: {renter.balance}, Staked: {renter.staked if hasattr(renter, 'staked') else 0}")
+    print(f"Miner balance: {miner.balance}, Staked: {miner.staked if hasattr(miner, 'staked') else 0}")
     
     # 等待仲裁期结束
     print("\n等待仲裁期结束...")

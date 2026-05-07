@@ -38,47 +38,47 @@ maincoin/
 
 ## 🔧 核心功能
 
-### 1. 统一API网关（unified_gateway.py）
+### 1. Unified API Gateway (unified_gateway.py)
 
-**功能**：
-- ✅ 整合RPC服务
-- ✅ 整合V3.0 REST API
-- ✅ 提供统一查询接口
-- ✅ 请求统计和监控
-- ✅ 错误处理
-- ✅ CORS支持
+**Features**:
+- ✅ Integrated RPC service
+- ✅ Integrated V3.0 REST API
+- ✅ Unified query interface
+- ✅ Request statistics and monitoring
+- ✅ Error handling
+- ✅ CORS support
 
-**代码量**：500+ 行
+**Code Size**: 500+ lines
 
-### 2. API文档（UNIFIED_API_GATEWAY.md）
+### 2. API Documentation (UNIFIED_API_GATEWAY.md)
 
-**内容**：
-- ✅ 快速开始指南
-- ✅ 所有API端点文档
-- ✅ 请求/响应示例
-- ✅ Python客户端示例
-- ✅ JavaScript客户端示例
-- ✅ 错误处理说明
+**Content**:
+- ✅ Quick start guide
+- ✅ All API endpoint documentation
+- ✅ Request/response examples
+- ✅ Python client examples
+- ✅ JavaScript client examples
+- ✅ Error handling guide
 
-**代码量**：600+ 行
+**Code Size**: 600+ lines
 
-### 3. 测试套件（test_unified_gateway.py）
+### 3. Test Suite (test_unified_gateway.py)
 
-**覆盖**：
-- ✅ 健康检查
-- ✅ 网关统计
-- ✅ RPC接口
-- ✅ V3.0验证者API
-- ✅ V3.0任务API
-- ✅ 统一查询接口
-- ✅ API文档
+**Coverage**:
+- ✅ Health checks
+- ✅ Gateway statistics
+- ✅ RPC interface
+- ✅ V3.0 Validator API
+- ✅ V3.0 Task API
+- ✅ Unified query interface
+- ✅ API documentation
 
-**代码量**：300+ 行
+**Code Size**: 300+ lines
 
-### 4. 启动脚本（start_unified_gateway.py）
+### 4. Startup Script (start_unified_gateway.py)
 
-**功能**：
-- ✅ 一键启动网关
+**Features**:
+- ✅ One-click gateway startup
 ```
 maincoin/
 ├── api/
@@ -93,11 +93,8 @@ maincoin/
 └── scripts/
     └── start_unified_gateway.py        # Startup Script ⭐
 ```
-- ✅ 自动加载依赖
-## 🔧 Core Features
-- ✅ 错误处理
-### 1. Unified API Gateway (unified_gateway.py)
-**代码量**：50+ 行
+- ✅ Auto-load dependencies
+- ✅ Error handling
 **Features**:
 - ✅ Integrated RPC service
 - ✅ Integrated V3.0 REST API

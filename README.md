@@ -6,38 +6,38 @@ A revolutionary decentralized blockchain platform that transforms real computati
 
 > **🎉 V3.0 Complete Implementation (2026-05-06)**: 
 > 
-> **核心突破：完整双层共识架构 + 隐私计算**
+> **Core Breakthrough: Complete Dual-Layer Consensus Architecture + Privacy Computing**
 > 
-> **Layer 1（安全层）**：
-> - ✅ PoS/DPoS 共识 - 负责出块、防攻击、状态一致性
-> - ✅ VRF 随机性 - 公平选举，防止操纵
-> - ✅ Slashing 机制 - 自动惩罚，保证安全
-> - ✅ BFT 最终性 - 快速确认
+> **Layer 1 (Security Layer)**:
+> - ✅ PoS/DPoS Consensus - Block production, attack prevention, state consistency
+> - ✅ VRF Randomness - Fair election, manipulation prevention
+> - ✅ Slashing Mechanism - Automatic punishment, security guarantee
+> - ✅ BFT Finality - Fast confirmation
 > 
-> **Layer 2（价值层）**：
-> - ✅ PoUW 任务市场 - 任务提交、执行、验证、奖励
-> - ✅ Challenge Game - 防作弊，类似 Truebit
-> - ✅ 可验证计算 - zk-proof 验证成本降低99%
-> - ✅ 状态提交 - Rollup 模型，Merkle Tree
+> **Layer 2 (Value Layer)**:
+> - ✅ PoUW Task Market - Task submission, execution, verification, reward distribution
+> - ✅ Challenge Game - Fraud prevention (similar to Truebit)
+> - ✅ Verifiable Computation - 99% reduction in zk-proof verification cost
+> - ✅ State Submission - Rollup model with Merkle Tree
 > 
-> **隐私计算**：
-> - ✅ TEE 模式 - Intel SGX / AMD SEV
-> - ✅ zk 模式 - 零知识证明
-> - ✅ MPC 模式 - 多方安全计算
+> **Privacy Computing**:
+> - ✅ TEE Mode - Intel SGX / AMD SEV
+> - ✅ ZK Mode - Zero-knowledge proof
+> - ✅ MPC Mode - Secure multi-party computation
 > 
-> **经济优化**（保留）：
-> - ✅ 在线奖励池 - 小矿工稳定收益
-> - ✅ 秒级兑换 - 乐观确认
-> - ✅ 冷启动解决 - 渐进式质押
-> - ✅ 资金可追溯 - 完全透明
+> **Economic Optimization** (Maintained):
+> - ✅ Online Reward Pool - Stable income for small miners
+> - ✅ Second-level Exchange - Optimistic confirmation
+> - ✅ Cold Start Solution - Progressive staking
+> - ✅ Fund Traceability - Complete transparency
 > 
-> **关键原则**：
-> - ✅ 共识 ≠ 计算
-> - ✅ 验证成本 < 计算成本
-> - ✅ 默认不信任（Trustless）
-> - ✅ 隐私优先（Privacy by design）
+> **Key Principles**:
+> - ✅ Consensus ≠ Computation
+> - ✅ Verification Cost < Computation Cost
+> - ✅ Trustless by Default
+> - ✅ Privacy First (Privacy by design)
 > 
-> 详见 [V3.0完整技术文档](docs/POUW_V3_COMPLETE_TECHNICAL_DOC.md)。
+> See [V3.0 Complete Technical Documentation](docs/POUW_V3_COMPLETE_TECHNICAL_DOC.md) for details.
 
 ## 1. Vision & Thesis
 

@@ -130,8 +130,7 @@ deploy/
 # ========================================
 # Git
 # ========================================
-.git/
-.github/
+# Keep repository metadata tracked by git; do not ignore .git or .github directories.
 # ========================================
 _*.py
 !__init__.py

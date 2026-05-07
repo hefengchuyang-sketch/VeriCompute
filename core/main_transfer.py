@@ -580,74 +580,114 @@ def transfer_main(
 
 if __name__ == "__main__":
     import os
-    
+    from core.crypto import ECDSASigner
+
     print("=" * 60)
-    print("MAIN 转账双见证系统测试")
+    print("MAIN Transfer Dual-Witness System Test")
     print("=" * 60)
-    
-    # 清理测试数据
+
+    # Clean up test data
     test_db = "data/test_main_transfers.db"
     if os.path.exists(test_db):
         os.remove(test_db)
-    
+
     engine = MainTransferEngine(test_db)
     
-    # 1. 创建转账
-    print("\n[1] 创建 MAIN 转账...")
+    # Generate test keypair
+    sender_keypair = ECDSASigner.generate_keypair()
+    
+    # 1. Create transfer
+    print("\n[1] Creating MAIN transfer...")
+    from_addr = "MAIN_alice123"
+    to_addr = "MAIN_bob456"
+    amount = 100.0
+    fee = 0.01
+    
+    # Generate real ECDSA signature
+    sig_data = f"{from_addr}{to_addr}{amount}{fee}".encode()
+    signature = ECDSASigner.sign(sender_keypair.private_key, sig_data).hex()
+    
     success, msg, transfer = engine.create_transfer(
-        from_address="MAIN_alice123",
-        to_address="MAIN_bob456",
-        amount=100.0,
-        fee=0.01,
-        signature="fake_signature_for_test",
-        memo="测试转账",
+        from_address=from_addr,
+        to_address=to_addr,
+        amount=amount,
+        fee=fee,
+        signature=signature,
+        public_key=sender_keypair.public_key.hex(),
+        memo="Test transfer",
     )
     print(f"    {msg}")
-    print(f"    转账 ID: {transfer.transfer_id}")
-    print(f"    需要见证: {transfer.required_witnesses} 个板块")
-    print(f"    见证板块: {transfer.witness_sectors}")
+    if transfer:
+        print(f"    Transfer ID: {transfer.transfer_id}")
+        print(f"    Required witnesses: {transfer.required_witnesses} sectors")
+        print(f"    Witness sectors: {transfer.witness_sectors}")
     
-    # 2. 添加第一个见证
-    print("\n[2] 添加第一个板块见证...")
-    sector1 = transfer.witness_sectors[0]
-    success, msg = engine.add_witness(
-        transfer_id=transfer.transfer_id,
-        sector=sector1,
-        witness_id=f"witness_{sector1}_001",
-        witness_signature="witness_sig_1",
-        block_height=100,
-        verified=True,
-    )
-    print(f"    板块 {sector1}: {msg}")
+    # 2. Add first witness
+    print("\n[2] Adding first sector witness...")
+    if transfer:
+        sector1 = transfer.witness_sectors[0]
+        success, msg = engine.add_witness(
+            transfer_id=transfer.transfer_id,
+            sector=sector1,
+            witness_id=f"witness_{sector1}_001",
+            witness_signature="witness_sig_1",
+            block_height=100,
+            verified=True,
+        )
+        print(f"    Sector {sector1}: {msg}")
+        
+        # 3. Check status
+        transfer = engine.get_transfer(transfer.transfer_id)
+        print(f"    Current status: {transfer.status.value}")
+        
+        # 4. Add second witness
+        print("\n[3] Adding second sector witness...")
+        sector2 = transfer.witness_sectors[1] if len(transfer.witness_sectors) > 1 else "RTX3080"
+        success, msg = engine.add_witness(
+            transfer_id=transfer.transfer_id,
+            sector=sector2,
+            witness_id=f"witness_{sector2}_001",
+            witness_signature="witness_sig_2",
+            block_height=101,
+            verified=True,
+        )
+        print(f"    Sector {sector2}: {msg}")
+        
+        # 5. Check final status
+        transfer = engine.get_transfer(transfer.transfer_id)
+        print(f"\n[4] Final status: {transfer.status.value}")
+        print(f"    Confirmed at: {transfer.confirmed_at}")
+        print(f"    Block heights: {transfer.block_heights}")
     
-    # 3. 检查状态
-    transfer = engine.get_transfer(transfer.transfer_id)
-    print(f"    当前状态: {transfer.status.value}")
+    # 6. Large transfer test
+    print("\n[5] Large transfer test (requires 3 witnesses)...")
+    whale_keypair = ECDSASigner.generate_keypair()
+    whale_addr = "MAIN_whale"
+    receiver_addr = "MAIN_receiver"
+    large_amount = 2000.0
+    large_fee = 1.0
     
-    # 4. 添加第二个见证
-    print("\n[3] 添加第二个板块见证...")
-    sector2 = transfer.witness_sectors[1] if len(transfer.witness_sectors) > 1 else "RTX3080"
-    success, msg = engine.add_witness(
-        transfer_id=transfer.transfer_id,
-        sector=sector2,
-        witness_id=f"witness_{sector2}_001",
-        witness_signature="witness_sig_2",
-        block_height=101,
-        verified=True,
-    )
-    print(f"    板块 {sector2}: {msg}")
+    large_sig_data = f"{whale_addr}{receiver_addr}{large_amount}{large_fee}".encode()
+    large_signature = ECDSASigner.sign(whale_keypair.private_key, large_sig_data).hex()
     
-    # 5. 检查最终状态
-    transfer = engine.get_transfer(transfer.transfer_id)
-    print(f"\n[4] 最终状态: {transfer.status.value}")
-    print(f"    确认时间: {transfer.confirmed_at}")
-    print(f"    区块高度: {transfer.block_heights}")
-    
-    # 6. 大额转账测试
-    print("\n[5] 大额转账测试（需要 3 个见证）...")
     success, msg, large_transfer = engine.create_transfer(
-        from_address="MAIN_whale",
-        to_address="MAIN_receiver",
+        from_address=whale_addr,
+        to_address=receiver_addr,
+        amount=large_amount,
+        fee=large_fee,
+        signature=large_signature,
+        public_key=whale_keypair.public_key.hex(),
+        memo="Large transfer test",
+    )
+    print(f"    {msg}")
+    if large_transfer:
+        print(f"    Large transfer ID: {large_transfer.transfer_id}")
+        print(f"    Required witnesses: {large_transfer.required_witnesses} sectors")
+    
+    print("\n" + "=" * 60)
+    print("Test completed")
+    print("=" * 60)
+
         amount=5000.0,  # 大额
         fee=0.05,
         signature="whale_signature",
