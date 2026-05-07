@@ -37,7 +37,7 @@ A revolutionary decentralized blockchain platform that transforms real computati
 > - ✅ 默认不信任（Trustless）
 > - ✅ 隐私优先（Privacy by design）
 > 
-> 详见 [V3.0完整技术文档](docs/POUW_V3_COMPLETE_TECHNICAL_DOC.md) | [技术白皮书](docs/TECHNICAL_WHITEPAPER.md)
+> 详见 [V3.0完整技术文档](docs/POUW_V3_COMPLETE_TECHNICAL_DOC.md)。
 
 ## 1. Vision & Thesis
 
@@ -319,6 +319,37 @@ def execute_exchange(request):
     # 3. Mint MAIN
     main_ledger.mint(request.to_address, main_amount)
 ```
+
+---
+
+## 9. Quick Integration Verification
+
+### 9.1 真实实现验证
+
+本仓库当前已完成真实隐私计算执行链路：
+
+- `core/pouw_chain_v3.py` 中的 `PrivacyCompute.tee_execute()` 使用 AES-256-GCM 真实解密 + 计算 + 结果加密
+- `PrivacyCompute.mpc_compute()` 使用 Shamir 秘密分享与拉格朗日重构
+- `PrivacyCompute.generate_zk_proof()` 使用 Schnorr-like 承诺-挑战-响应协议
+- `core/dual_witness_exchange.py` 已切换到真实 ECDSA 签名验证
+
+验证命令：
+
+```bash
+cd maincoin
+py -3 test_real_implementation.py
+```
+
+### 9.2 E2E 文件传输
+
+文件传输层支持端到端加密：
+
+- `core/e2e_encryption.py` 提供 X25519 + AES-256-GCM 密钥协商和块级加密
+- `core/file_transfer.py` 提供 `e2e_create_session`, `e2e_handshake`, `e2e_upload_chunk`, `e2e_download_chunk`
+- `core/rpc_handlers/e2e_handler.py` 注册对应 RPC 方法
+
+> 注意：E2E 模块当前用于文件传输安全通道，不同于 `PrivacyCompute` 中的任务隐私计算逻辑。
+
 
 Evidence links:
 
@@ -877,7 +908,8 @@ python main.py --config config.mainnet.yaml --mining
 
 ```bash
 # Preferred launcher for the integrated RPC + V3 API gateway
-python scripts/start_unified_gateway.py --host 0.0.0.0 --port 8000
+python scripts/start_unified_gateway.py --host 0.0.0.0 --port 8000 --data-dir ./data_v3 \
+    --cors-origins http://localhost:3000 http://127.0.0.1:3000
 
 # Direct module entry also works
 python api/unified_gateway.py

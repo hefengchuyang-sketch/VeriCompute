@@ -30,6 +30,7 @@ from contextlib import contextmanager
 logger = logging.getLogger(__name__)
 
 from core.sector_coin import SectorCoinType, SectorCoinLedger, get_sector_ledger
+from core.crypto import ECDSASigner
 
 
 class ExchangeStatus(Enum):
@@ -151,6 +152,10 @@ class OptimisticDualWitnessExchange:
         self.pending_exchanges: Dict[str, ExchangeRequest] = {}
         self.lock = threading.RLock()
 
+        # 见证板块公钥注册表 {sector: public_key_hex}
+        self.witness_public_keys: Dict[str, str] = {}
+        self._load_witness_keys()
+
         self._start_background_verifier()
 
     @property
@@ -178,6 +183,45 @@ class OptimisticDualWitnessExchange:
 
     def calculate_main_amount(self, sector: str, sector_coin_amount: float) -> float:
         return sector_coin_amount * self.get_exchange_rate(sector)
+
+    def register_witness_public_key(self, sector: str, public_key_hex: str) -> bool:
+        """注册见证板块的公钥"""
+        try:
+            # 验证公钥格式（64字节ECDSA公钥）
+            if len(public_key_hex) != 128 or not all(c in '0123456789abcdefABCDEF' for c in public_key_hex):
+                return False
+
+            with self.lock:
+                self.witness_public_keys[sector] = public_key_hex
+
+                # 保存到数据库
+                conn = sqlite3.connect(str(self.db_path))
+                conn.execute("""
+                    INSERT OR REPLACE INTO witness_keys
+                    (sector, public_key, registered_at)
+                    VALUES (?, ?, ?)
+                """, (sector, public_key_hex, time.time()))
+                conn.commit()
+                conn.close()
+
+                logger.info(f"Registered public key for witness sector {sector}")
+                return True
+
+        except Exception as e:
+            logger.error(f"Failed to register witness public key: {e}")
+            return False
+
+    def _load_witness_keys(self):
+        """加载见证公钥"""
+        try:
+            conn = sqlite3.connect(str(self.db_path))
+            cursor = conn.execute("SELECT sector, public_key FROM witness_keys")
+            for row in cursor.fetchall():
+                self.witness_public_keys[row[0]] = row[1]
+            conn.close()
+        except Exception:
+            # 表不存在时忽略
+            pass
 
     def _init_db(self):
         """初始化数据库"""
@@ -212,6 +256,15 @@ class OptimisticDualWitnessExchange:
                 witness_block_hash TEXT NOT NULL,
                 witness_time REAL NOT NULL,
                 FOREIGN KEY (exchange_id) REFERENCES exchanges(exchange_id)
+            )
+        """)
+
+        # 见证公钥表
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS witness_keys (
+                sector TEXT PRIMARY KEY,
+                public_key TEXT NOT NULL,
+                registered_at REAL NOT NULL
             )
         """)
 
@@ -372,14 +425,23 @@ class OptimisticDualWitnessExchange:
         exchange_id: str,
         witness_sector: str,
         block_height: int,
-        block_hash: str
+        block_hash: str,
+        signature: str
     ) -> Tuple[bool, str]:
-        """添加见证"""
+        """添加见证（带签名验证）"""
         with self.lock:
             if exchange_id not in self.pending_exchanges:
                 return False, "Exchange not found"
 
             request = self.pending_exchanges[exchange_id]
+
+            # 验证签名
+            if not self._verify_witness_signature(witness_sector, exchange_id, block_height, block_hash, signature):
+                return False, "Invalid witness signature"
+
+            # 检查超时（24小时）
+            if time.time() - request.created_at > 86400:
+                return False, "Exchange timeout"
 
             # 添加见证记录
             witness = WitnessRecord(
@@ -409,6 +471,39 @@ class OptimisticDualWitnessExchange:
                 return True, "Exchange completed"
 
             return True, f"Witness added ({len(request.witnesses)}/{request.required_witnesses})"
+
+    def _verify_witness_signature(
+        self,
+        witness_sector: str,
+        exchange_id: str,
+        block_height: int,
+        block_hash: str,
+        signature: str
+    ) -> bool:
+        """验证见证签名"""
+        try:
+            # 获取见证板块的公钥
+            public_key_hex = self.witness_public_keys.get(witness_sector)
+            if not public_key_hex:
+                logger.warning(f"No public key registered for witness sector {witness_sector}")
+                return False
+
+            # 验证签名长度
+            if len(signature) < 64 or not all(c in '0123456789abcdefABCDEF' for c in signature):
+                return False
+
+            # 构造消息
+            message = f"{exchange_id}:{block_height}:{block_hash}"
+            message_bytes = message.encode()
+
+            # 真实 ECDSA 验证
+            public_key_bytes = bytes.fromhex(public_key_hex)
+            signature_bytes = bytes.fromhex(signature)
+            return ECDSASigner.verify(public_key_bytes, message_bytes, signature_bytes)
+
+        except Exception as e:
+            logger.error(f"Witness signature verification failed: {e}")
+            return False
 
     def _execute_exchange_optimistic(self, request: ExchangeRequest):
         """乐观执行兑换"""
