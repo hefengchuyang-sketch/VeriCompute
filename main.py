@@ -458,6 +458,9 @@ class POUWNode:
             pouw_support_ratio=pouw_support_ratio,
             sbox_enabled=sbox_enabled,
         )
+        fallback_policy = consensus_cfg.get("fallback_policy")
+        if fallback_policy is not None:
+            self.consensus_engine.configure_fallback_policy(str(fallback_policy))
         
         # 网络类型标记
         self.consensus_engine.network_type = network_type
@@ -465,7 +468,8 @@ class POUWNode:
         log.info(
             f"共识引擎初始化: {node_id} (网络={network_type}, mode={self.consensus_engine.consensus_mode}, "
             f"sbox_ratio={self.consensus_engine.consensus_sbox_ratio:.2f}, "
-            f"pouw_support_ratio={self.consensus_engine.consensus_pouw_support_ratio:.2f})"
+            f"pouw_support_ratio={self.consensus_engine.consensus_pouw_support_ratio:.2f}, "
+            f"fallback_policy={self.consensus_engine.fallback_policy})"
         )
     
     def _init_sector_ledger(self):

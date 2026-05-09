@@ -37,7 +37,7 @@ This loop should take priority over additional token features, more pages, or ex
 | Canonical serialization/hash | Implemented | `core/serialization.py`, `tests/test_canonical_serialization.py`; `Block.compute_hash()` uses `canonical_block_hash()` | Migrate all protocol objects to canonical hashing |
 | Finality API | Partial | `ConsensusEngine.finalize_blocks()`, `get_finalized_height()`, and `chain_getConsensusStatus` exist | Connect reward release to finality and add frontend consumption |
 | PoUW proof boundary | Partial | Existing PoUW execution/proof logic exists | Add explicit proof states: `VALID`, `PENDING_CHALLENGE`, `INVALID` |
-| Automatic PoW fallback control | Not implemented | `select_consensus()` still needs explicit policy hardening | Add `fallback_policy`, default to `idle_block_only` |
+| Automatic PoW fallback control | Implemented foundation | `ConsensusEngine.fallback_policy`, `configure_fallback_policy()`, `main.py`, `config.yaml`, and `tests/test_consensus_fallback_policy.py` | Add admin RPC and operator runbook controls |
 | Task lifecycle store | Not implemented | No dedicated `TaskStateStore` | Add durable lifecycle tables and event log |
 | Budget locking / reward ledger | Not implemented | UTXO store exists, but task budget lock flow is not formalized | Add `RewardLedger` and task budget/bond locking |
 | Task payload privacy | Implemented foundation | `core/task_encryption.py`, `tests/test_task_encryption.py` | Integrate with `task_create`, result download, worker grants |
@@ -420,9 +420,13 @@ Remaining:
 
 ### 7.4 Fallback policy
 
-Current concern:
+Implemented foundation:
 
-- `select_consensus()` can still fall back too loosely when useful-work paths are unavailable.
+- `ConsensusEngine.fallback_policy` defaults to `idle_block_only`.
+- Supported values are `disabled`, `idle_block_only`, and `emergency_pow`.
+- `configure_fallback_policy()` normalizes invalid values to `idle_block_only`.
+- `select_consensus()` now fails closed to `POUW` when PoW fallback is disabled or the task pool is not idle.
+- `tests/test_consensus_fallback_policy.py` covers all supported policies.
 
 Target configuration:
 
@@ -439,6 +443,11 @@ Default production policy:
 - No silent PoW fallback.
 - Use idle/liveness blocks when the task pool is empty.
 - Emergency PoW requires explicit operator configuration and logging.
+
+Remaining implementation tasks:
+
+1. Add an admin RPC for emergency policy changes with audit logging.
+2. Add a runbook requiring two-operator approval before enabling `emergency_pow`.
 
 ## 8. Verifiable Compute Market Design
 
@@ -681,13 +690,13 @@ Implemented:
 tests/test_canonical_serialization.py
 tests/test_proposer_selection.py
 tests/test_task_encryption.py
+tests/test_consensus_fallback_policy.py
 ```
 
 Required next tests:
 
 ```text
 tests/test_finality_state_machine.py
-tests/test_consensus_fallback_policy.py
 tests/integration/test_consensus_status_rpc.py
 tests/integration/test_verifiable_compute_market_e2e.py
 tests/security/test_task_data_not_on_chain.py

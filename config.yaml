@@ -128,6 +128,9 @@ consensus:
   # Globally enable/disable S-Box mining path
   sbox_enabled: true
 
+  # PoW fallback policy: disabled, idle_block_only, emergency_pow
+  fallback_policy: idle_block_only
+
   # Target block time (seconds)
   target_block_time: 30
   

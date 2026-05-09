@@ -40,6 +40,7 @@ import hashlib
 import threading
 import uuid
 import json
+import os
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable, Tuple, Any
@@ -142,6 +143,13 @@ class ConsensusType(Enum):
     POW = "POW"            # 传统工作量证明（保底）
     HYBRID = "HYBRID"      # 混合
     SBOX_POUW = "SBOX_POUW"  # S-Box PoUW 挖矿（密码学有用工作量）
+
+
+CONSENSUS_FALLBACK_POLICIES = {
+    "disabled",
+    "idle_block_only",
+    "emergency_pow",
+}
 
 
 class BlockStatus(Enum):
@@ -656,6 +664,12 @@ class ConsensusEngine:
         self.consensus_mode = "sbox_primary"  # sbox_primary | mixed | sbox_only | pouw_only
         self.consensus_sbox_ratio = 0.5  # mixed 模式下 SBOX_POUW 占比
         self.consensus_pouw_support_ratio = 0.1  # sbox_primary 模式下 POUW 辅助占比
+        self.fallback_policy = self._normalize_fallback_policy(
+            os.getenv("MAINCOIN_CONSENSUS_FALLBACK_POLICY")
+            or os.getenv("POUW_CONSENSUS_FALLBACK_POLICY")
+            or "idle_block_only"
+        )
+        self.allow_pow_fallback = self.fallback_policy != "disabled"
         self._consensus_round = 0
         self._recent_consensus_selected = deque(maxlen=200)
         self._recent_consensus_mined = deque(maxlen=200)
@@ -1104,6 +1118,37 @@ class ConsensusEngine:
         with self._lock:
             return len(self.pending_pouw) > 0
     
+    def _normalize_fallback_policy(self, policy: str) -> str:
+        value = (policy or "idle_block_only").strip().lower()
+        if value not in CONSENSUS_FALLBACK_POLICIES:
+            return "idle_block_only"
+        return value
+
+    def configure_fallback_policy(self, policy: str) -> str:
+        self.fallback_policy = self._normalize_fallback_policy(policy)
+        self.allow_pow_fallback = self.fallback_policy != "disabled"
+        return self.fallback_policy
+
+    def _pow_fallback_allowed(self, task_pool_size: int) -> bool:
+        if self.fallback_policy == "disabled":
+            return False
+        if self.fallback_policy == "emergency_pow":
+            return True
+        return task_pool_size < ChainParams.TASK_POOL_SWITCH_THRESHOLD
+
+    def _select_pow_or_forced_pouw(self, reason: str, auto_count: int = 4) -> ConsensusType:
+        task_pool_size = self._current_task_pool_size()
+        if self._pow_fallback_allowed(task_pool_size):
+            self.log(reason)
+            selected = ConsensusType.POW
+            self._record_selected_consensus(selected)
+            return selected
+
+        self._auto_generate_pouw(count=auto_count)
+        selected = ConsensusType.POUW
+        self._record_selected_consensus(selected)
+        return selected
+
     def select_consensus(self) -> ConsensusType:
         """选择共识类型。
         
@@ -1122,7 +1167,7 @@ class ConsensusEngine:
             self._auto_generate_pouw()
         has_pouw = self.has_pouw_tasks()
         task_pool_size = self._current_task_pool_size()
-        pow_fallback_allowed = task_pool_size < ChainParams.TASK_POOL_SWITCH_THRESHOLD
+        pow_fallback_allowed = self._pow_fallback_allowed(task_pool_size)
 
         sbox_available = False
         if self._sbox_mining_enabled:
@@ -1149,10 +1194,7 @@ class ConsensusEngine:
                     selected = ConsensusType.POUW
                     self._record_selected_consensus(selected)
                     return selected
-            self.log("⚠️ POUW 任务不足，回退 PoW 保活")
-            selected = ConsensusType.POW
-            self._record_selected_consensus(selected)
-            return selected
+            return self._select_pow_or_forced_pouw("⚠️ POUW 任务不足，回退 PoW 保活", auto_count=6)
 
         if mode == "sbox_only":
             if sbox_available:
@@ -1169,10 +1211,7 @@ class ConsensusEngine:
                     selected = ConsensusType.POUW
                     self._record_selected_consensus(selected)
                     return selected
-            self.log("⚠️ S-Box/POUW 均不可用，回退 PoW 保活")
-            selected = ConsensusType.POW
-            self._record_selected_consensus(selected)
-            return selected
+            return self._select_pow_or_forced_pouw("⚠️ S-Box/POUW 均不可用，回退 PoW 保活")
 
         if mode == "sbox_primary":
             if sbox_available and has_pouw:
@@ -1203,10 +1242,7 @@ class ConsensusEngine:
                     selected = ConsensusType.POUW
                     self._record_selected_consensus(selected)
                     return selected
-            self.log("⚠️ S-Box/POUW 均不可用，回退 PoW 保活")
-            selected = ConsensusType.POW
-            self._record_selected_consensus(selected)
-            return selected
+            return self._select_pow_or_forced_pouw("⚠️ S-Box/POUW 均不可用，回退 PoW 保活")
 
         # mixed 模式：按确定性比例混用
         if sbox_available and has_pouw:
@@ -1237,10 +1273,7 @@ class ConsensusEngine:
                 selected = ConsensusType.POUW
                 self._record_selected_consensus(selected)
                 return selected
-        self.log("⚠️ S-Box/POUW 均不可用，回退 PoW 保活")
-        selected = ConsensusType.POW
-        self._record_selected_consensus(selected)
-        return selected
+        return self._select_pow_or_forced_pouw("⚠️ S-Box/POUW 均不可用，回退 PoW 保活")
 
     def _record_selected_consensus(self, consensus: ConsensusType):
         """记录最近选择的共识类型。"""
@@ -1396,6 +1429,8 @@ class ConsensusEngine:
         if kwargs.get("work_threshold") is not None:
             wt = float(kwargs["work_threshold"])
             self.current_work_threshold = max(20.0, min(180.0, wt))
+        if kwargs.get("fallback_policy") is not None:
+            self.configure_fallback_policy(str(kwargs["fallback_policy"]))
 
         self._mechanism_strategy["updated_at"] = time.time()
         self.log(
