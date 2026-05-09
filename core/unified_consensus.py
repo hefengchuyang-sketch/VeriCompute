@@ -2,11 +2,19 @@
 """
 统一共识引擎 (Unified Consensus Engine)
 
-.. warning:: NOT INTEGRATED / 未集成
+.. warning:: EXPERIMENTAL / 实验模块 - DO NOT IMPORT FROM PRODUCTION
     此模块在当前生产版本中未被 main.py 实例化或使用。
     生产代码使用 core/consensus.py 的 ConsensusEngine。
     本模块中的 MinerEngine、CurrencyBridge、ZeroTrustGuard 等
     组件均不生效。未来将通过 Phase 迭代逐步集成。
+
+    禁止在以下生产路径中导入本模块:
+      - main.py
+      - core/rpc_service.py
+      - core/rpc/*
+      - core/rpc_handlers/*
+    守护测试: tests/test_production_consensus_entrypoint.py
+    参考: docs/TECHNICAL_REVIEW_AND_CONSENSUS_RECOMMENDATIONS_2026-05-09.md §7
 
 将所有独立模块连接为一个完整的共识系统：
 
@@ -42,6 +50,9 @@
 - 板块币→MAIN: 受控兑换（锁定→双见证→销毁板块币→铸造MAIN）
 - MAIN→板块币: 受限（仅通过DEX购买）
 """
+
+# 实验模块标识：生产代码不得导入。守护测试通过此常量识别。
+EXPERIMENTAL_ONLY = True
 
 import os
 import time

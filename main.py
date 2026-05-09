@@ -411,9 +411,20 @@ class POUWNode:
         self.sector = sector
     
     def _init_consensus(self):
-        """初始化共识引擎。"""
+        """初始化共识引擎。
+
+        生产共识入口约束：
+        本方法必须且只能从 core.consensus 导入 ConsensusEngine。
+        禁止在此处直接导入或实例化以下实验模块：
+          - core.unified_consensus.UnifiedConsensus
+          - core.dual_layer_consensus.*
+          - core.pouw_chain_v3.POUWChainV3
+        如需切换或并存共识引擎，必须先更新
+        tests/test_production_consensus_entrypoint.py 的守护断言并经过架构评审。
+        参考：docs/TECHNICAL_REVIEW_AND_CONSENSUS_RECOMMENDATIONS_2026-05-09.md §7
+        """
         from core.consensus import ConsensusEngine
-        
+
         node_id = self.config["node"]["id"] or f"node_{int(time.time())}"
         network_type = self.config.get("network", {}).get("type", "mainnet")
         

@@ -1,6 +1,22 @@
 """
 Consensus 共识模块 - POUW + PoW 混合共识
 
+============================================================
+PRODUCTION CONSENSUS ENTRYPOINT / 生产共识唯一入口
+============================================================
+本模块是 main.py 实际加载并运行的共识引擎，是当前 maincoin
+项目的【唯一】生产共识入口。修改本文件需要谨慎评估对链上
+出块、奖励、finality、UTXO 状态的影响。
+
+不要在 main.py 或 core/rpc_service.py 中直接导入：
+- core.unified_consensus       (实验性，未集成)
+- core.dual_layer_consensus    (实验性，未集成)
+- core.pouw_chain_v3           (实验性，未集成)
+
+如需切换共识引擎，必须先经过架构评审，并更新
+tests/test_production_consensus_entrypoint.py 中的守护断言。
+参考：docs/TECHNICAL_REVIEW_AND_CONSENSUS_RECOMMENDATIONS_2026-05-09.md §7
+
 实现功能：
 1. POUW 任务执行与客观观测
 2. PoW 作为无任务时的保底
@@ -15,6 +31,9 @@ Consensus 共识模块 - POUW + PoW 混合共识
 - 最大交易数: 2000 笔
 - 难度调整周期: 每 10 个区块
 """
+
+# 生产共识标识：测试与导入守护使用此常量识别唯一生产入口
+IS_PRODUCTION_CONSENSUS_ENTRYPOINT = True
 
 import time
 import hashlib

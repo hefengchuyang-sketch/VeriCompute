@@ -2,6 +2,18 @@
 """
 POUW-Chain V3.0 完整实现
 
+.. warning:: EXPERIMENTAL / 实验模块 - DO NOT IMPORT FROM PRODUCTION
+    此模块为 V3 完整原型，未在 main.py 中集成。
+    生产共识统一使用 core/consensus.py 的 ConsensusEngine。
+
+    禁止在以下生产路径中导入本模块:
+      - main.py
+      - core/rpc_service.py
+      - core/rpc/*
+      - core/rpc_handlers/*
+    守护测试: tests/test_production_consensus_entrypoint.py
+    参考: docs/TECHNICAL_REVIEW_AND_CONSENSUS_RECOMMENDATIONS_2026-05-09.md §7
+
 根据技术白皮书实现的完整系统：
 1. Layer 1: PoS/DPoS 共识层
 2. Layer 2: PoUW 计算层
@@ -16,6 +28,9 @@ POUW-Chain V3.0 完整实现
 - 隐私：TEE + MPC
 - 存储：Merkle Tree + IPFS
 """
+
+# 实验模块标识：生产代码不得导入。守护测试通过此常量识别。
+EXPERIMENTAL_ONLY = True
 
 import time
 import hashlib

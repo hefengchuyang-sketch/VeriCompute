@@ -2,6 +2,18 @@
 """
 双层共识架构 V3.0
 
+.. warning:: EXPERIMENTAL / 实验模块 - DO NOT IMPORT FROM PRODUCTION
+    此模块为 Layer1/Layer2 共识原型，未在 main.py 中集成。
+    生产共识统一使用 core/consensus.py 的 ConsensusEngine。
+
+    禁止在以下生产路径中导入本模块:
+      - main.py
+      - core/rpc_service.py
+      - core/rpc/*
+      - core/rpc_handlers/*
+    守护测试: tests/test_production_consensus_entrypoint.py
+    参考: docs/TECHNICAL_REVIEW_AND_CONSENSUS_RECOMMENDATIONS_2026-05-09.md §7
+
 核心设计原则：
 1. Layer 1（安全共识层）：负责出块、防攻击、状态一致性
 2. Layer 2（PoUW任务层）：负责任务执行、验证、奖励分配
@@ -36,6 +48,9 @@
 │    - 奖励分配                                            │
 └─────────────────────────────────────────────────────────┘
 """
+
+# 实验模块标识：生产代码不得导入。守护测试通过此常量识别。
+EXPERIMENTAL_ONLY = True
 
 import time
 import hashlib

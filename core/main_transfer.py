@@ -687,14 +687,3 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("Test completed")
     print("=" * 60)
-
-        amount=5000.0,  # 大额
-        fee=0.05,
-        signature="whale_signature",
-    )
-    print(f"    {msg}")
-    print(f"    需要见证: {large_transfer.required_witnesses} 个板块")
-    
-    print("\n" + "=" * 60)
-    print("测试完成!")
-    print("=" * 60)
