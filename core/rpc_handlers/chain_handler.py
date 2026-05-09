@@ -17,6 +17,11 @@ class ChainHandler(RPCHandlerBase):
             RPCPermission.PUBLIC
         )
         self.register(
+            "chain_getConsensusStatus", self.svc._chain_get_consensus_status,
+            "获取共识与终局性状态",
+            RPCPermission.PUBLIC
+        )
+        self.register(
             "chain_updateMechanismStrategy", self.svc._chain_update_mechanism_strategy,
             "更新机制策略（版本化/灰度/回滚）",
             RPCPermission.ADMIN

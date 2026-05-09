@@ -968,6 +968,80 @@ class NodeRPCService:
                 pass
         return result
 
+    def _chain_get_consensus_status(self, sector: str = None, **kwargs) -> Dict:
+        """Return consensus/finality status for the frontend dashboard.
+
+        This is the concrete RPC backing the technical plan's
+        ``chain_getConsensusStatus`` requirement. It intentionally returns only
+        read-only operational state and is safe to expose as PUBLIC.
+        """
+        engine = self.consensus_engine
+        now = time.time()
+        if not engine:
+            return {
+                "height": 0,
+                "finalizedHeight": 0,
+                "consensusEngine": "",
+                "consensusMode": "",
+                "fallbackPolicy": "",
+                "currentProposer": "",
+                "validatorCount": 0,
+                "pendingTaskCount": 0,
+                "pendingChallengeCount": 0,
+                "lastFinalizedHash": "",
+                "lastBlockTime": 0,
+                "timestamp": now,
+            }
+
+        height = engine.get_chain_height() if hasattr(engine, "get_chain_height") else 0
+        if hasattr(engine, "get_finalized_height"):
+            finalized_height = engine.get_finalized_height()
+        else:
+            threshold = int(getattr(engine, "FINALITY_THRESHOLD", 20))
+            finalized_height = max(0, height - threshold)
+
+        latest = engine.get_latest_block() if hasattr(engine, "get_latest_block") else None
+        last_block_time = float(getattr(latest, "timestamp", 0) or 0)
+        current_proposer = str(getattr(latest, "miner_id", "") or "")
+
+        last_finalized_hash = ""
+        try:
+            finalized_block = engine.get_block_by_height(finalized_height)
+            last_finalized_hash = str(getattr(finalized_block, "hash", "") or "")
+        except Exception:
+            last_finalized_hash = ""
+
+        chain_info = {}
+        try:
+            chain_info = engine.get_chain_info() if hasattr(engine, "get_chain_info") else {}
+        except Exception:
+            chain_info = {}
+
+        fallback_policy = getattr(engine, "fallback_policy", "")
+        if not fallback_policy:
+            allow_pow = bool(getattr(engine, "allow_pow_fallback", False))
+            fallback_policy = "emergency_pow" if allow_pow else "legacy_guarded"
+
+        return {
+            "height": height,
+            "finalizedHeight": finalized_height,
+            "consensusEngine": type(engine).__name__,
+            "consensusMode": getattr(engine, "consensus_mode", ""),
+            "fallbackPolicy": fallback_policy,
+            "currentProposer": current_proposer,
+            "validatorCount": len(getattr(engine, "validators", []) or []),
+            "pendingTaskCount": len(getattr(engine, "pending_pouw", []) or []),
+            "pendingChallengeCount": len(getattr(engine, "pending_challenges", []) or []),
+            "lastFinalizedHash": last_finalized_hash,
+            "lastBlockTime": last_block_time,
+            "sector": sector or getattr(engine, "sector", "GENERAL"),
+            "difficulty": getattr(engine, "current_difficulty", 0),
+            "sboxMiningEnabled": getattr(engine, "_sbox_mining_enabled", False),
+            "consensusSelectedDistribution": chain_info.get("consensus_selected_distribution", {}),
+            "consensusMinedDistribution": chain_info.get("consensus_mined_distribution", {}),
+            "timestamp": now,
+        }
+
     def _chain_update_mechanism_strategy(self,
                                          version: str = None,
                                          rollout: str = None,

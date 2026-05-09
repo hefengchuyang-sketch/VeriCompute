@@ -579,7 +579,7 @@ PUBLIC_RPC_METHODS = {
     # 节点信息
     "node_getInfo", "node_getVersion",
     # 链信息
-    "chain_getInfo", "chain_getHeight",
+    "chain_getInfo", "chain_getHeight", "chain_getConsensusStatus",
     "block_getLatest", "block_getByHeight", "block_getByHash",
     "blockchain_getHeight", "blockchain_getBlock", "blockchain_getLatestBlocks",
     # 交易查询

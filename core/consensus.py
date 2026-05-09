@@ -2710,6 +2710,19 @@ class ConsensusEngine:
         终局性意味着该区块不会因为分叉被回滚。
         """
         return self.get_confirmations(block_height) >= self.FINALITY_THRESHOLD
+
+    def get_finalized_height(self) -> int:
+        """Return the highest height that has reached finality.
+
+        Finality is depth-based in the current implementation. A block is
+        finalized once it is buried by ``FINALITY_THRESHOLD`` later blocks.
+        Returns 0 for short chains so callers can safely display genesis as the
+        only finalized anchor until the threshold is reached.
+        """
+        current = self.get_chain_height()
+        if current <= 0:
+            return 0
+        return max(0, current - self.FINALITY_THRESHOLD)
     
     def is_tx_confirmed(self, block_height: int, is_coinbase: bool = False) -> bool:
         """判断交易是否已达到足够确认数。
