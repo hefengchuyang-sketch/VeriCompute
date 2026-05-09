@@ -202,7 +202,7 @@ class Block:
     sbox_all_sectors: List[str] = field(default_factory=list)  # 所有参与板块
     
     def compute_hash(self) -> str:
-        """计算区块哈希。"""
+        """计算区块哈希（历史路径，链上 hash 仍以本方法为准）。"""
         # D-16 fix: 包含 consensus_type 防止共识类型篡改
         # D-17 fix: 包含 block_reward/total_fees/miner_address/sector/block_type 防止经济字段篡改
         header = (f"{self.height}{self.prev_hash}{self.merkle_root}{self.timestamp}"
@@ -213,7 +213,18 @@ class Block:
         if self.sbox_hex:
             header += f"{self.sbox_hex}{self.sbox_score:.6f}"
         return hashlib.sha256(header.encode()).hexdigest()
-    
+
+    def canonical_hash(self) -> str:
+        """canonical 区块头哈希（新协议路径，可选）。
+
+        与 ``compute_hash`` 不兼容，不替换链上 hash。
+        作为新模块计算 task_root/state_root/header digest 时的稳定输入。
+        参考: docs/TECHNICAL_REVIEW_AND_CONSENSUS_RECOMMENDATIONS_2026-05-09.md §8.4
+        """
+        # 局部 import 避免文件被早期导入时的潜在循环依赖
+        from core.serialization import canonical_block_hash
+        return canonical_block_hash(self)
+
     def compute_merkle_root(self) -> str:
         """M-2 fix: 计算标准的两两配对默克尔根。
         

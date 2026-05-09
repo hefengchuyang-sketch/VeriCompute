@@ -54,12 +54,13 @@ EXPERIMENTAL_ONLY = True
 
 import time
 import hashlib
-import random
 import threading
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
+
+from core.proposer_selection import ProposerCandidate, select_weighted_proposer
 
 logger = logging.getLogger(__name__)
 
@@ -149,41 +150,39 @@ class Layer1Consensus:
 
     def select_block_producer(self, block_height: int) -> Optional[str]:
         """
-        选择出块者（使用VRF保证随机性）
+        选择出块者（确定性加权选择）
 
-        VRF（Verifiable Random Function）：
-        - 可验证的随机函数
-        - 防止操纵
-        - 公平选举
+        改造记录: 2026-05-09
+          原实现使用 ``random.seed(...)`` + ``random.uniform(...)``，
+          会污染全局随机状态且浮点累加跨平台不稳定。
+          已替换为 ``core.proposer_selection.select_weighted_proposer``，
+          权重按 ``stake * reputation`` 量化为整数，结果在所有节点上一致。
+          中期可在保持本方法签名不变的前提下升级为真正 VRF。
         """
         if not self.active_validator_set:
             return None
 
-        # 简化版VRF：使用区块高度作为种子
-        # 生产环境应使用真正的VRF（如Algorand的VRF）
-        seed = hashlib.sha256(f"{block_height}".encode()).hexdigest()
-        random.seed(int(seed, 16))
-
-        # 按质押权重选择
-        weights = []
+        candidates: list[ProposerCandidate] = []
         for vid in self.active_validator_set:
             validator = self.validators[vid]
-            weight = validator.stake_amount * validator.reputation_score
-            weights.append(weight)
+            quantized = int(validator.stake_amount * validator.reputation_score * 1_000_000)
+            if quantized <= 0:
+                continue
+            candidates.append(
+                ProposerCandidate(
+                    node_id=vid,
+                    address=validator.address,
+                    weight=quantized,
+                )
+            )
 
-        total_weight = sum(weights)
-        if total_weight == 0:
-            return None
-
-        # 加权随机选择
-        r = random.uniform(0, total_weight)
-        cumsum = 0
-        for i, vid in enumerate(self.active_validator_set):
-            cumsum += weights[i]
-            if r <= cumsum:
-                return vid
-
-        return self.active_validator_set[0]
+        result = select_weighted_proposer(
+            candidates=candidates,
+            height=block_height,
+            epoch_seed="dual_layer_v1",
+            parent_hash="",
+        )
+        return result.selected_node_id if result is not None else None
 
     def slash_validator(
         self,

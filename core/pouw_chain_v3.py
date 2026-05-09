@@ -34,7 +34,6 @@ EXPERIMENTAL_ONLY = True
 
 import time
 import hashlib
-import random
 import threading
 import json
 import logging
@@ -45,6 +44,7 @@ from pathlib import Path
 import sqlite3
 
 from core.crypto_utils import aes_gcm_encrypt, aes_gcm_decrypt, sha256_hex
+from core.proposer_selection import ProposerCandidate, select_weighted_proposer
 
 logger = logging.getLogger(__name__)
 
@@ -217,29 +217,38 @@ class Layer1Consensus:
             return True, "Validator registered"
 
     def vrf_select_proposer(self, height: int) -> Optional[str]:
-        """VRF 选择出块者"""
+        """确定性加权 proposer 选择。
+
+        改造记录: 2026-05-09
+          原实现使用 ``random.seed(...)`` + ``random.uniform(...)``，
+          会污染全局随机状态。已替换为
+          ``core.proposer_selection.select_weighted_proposer``，
+          ``voting_power`` 量化为整数权重，跨平台结果一致。
+        """
         if not self.active_set:
             return None
 
-        # 简化版VRF（生产环境应使用真正的VRF）
-        seed = hashlib.sha256(f"{height}".encode()).hexdigest()
-        random.seed(int(seed, 16))
+        candidates: list[ProposerCandidate] = []
+        for vid in self.active_set:
+            validator = self.validators[vid]
+            quantized = int(validator.voting_power * 1_000_000)
+            if quantized <= 0:
+                continue
+            candidates.append(
+                ProposerCandidate(
+                    node_id=vid,
+                    address=validator.address,
+                    weight=quantized,
+                )
+            )
 
-        # 按质押权重选择
-        weights = [self.validators[vid].voting_power for vid in self.active_set]
-        total = sum(weights)
-
-        if total == 0:
-            return None
-
-        r = random.uniform(0, total)
-        cumsum = 0
-        for i, vid in enumerate(self.active_set):
-            cumsum += weights[i]
-            if r <= cumsum:
-                return vid
-
-        return self.active_set[0]
+        result = select_weighted_proposer(
+            candidates=candidates,
+            height=height,
+            epoch_seed="pouw_chain_v3",
+            parent_hash="",
+        )
+        return result.selected_node_id if result is not None else None
 
     def produce_block(
         self,
