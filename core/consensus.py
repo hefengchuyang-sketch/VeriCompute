@@ -688,8 +688,9 @@ class ConsensusEngine:
             "updated_at": time.time(),
         }
         self._strategy_history: List[Dict[str, Any]] = []
+        self._fallback_policy_audit: deque = deque(maxlen=200)
         
-        # 线程安全锁 — 保护共享状态
+        # 线程安全锁 - 保护共享状态
         self._lock = threading.Lock()
         
         # 初始化存储并加载区块链
@@ -1127,7 +1128,34 @@ class ConsensusEngine:
     def configure_fallback_policy(self, policy: str) -> str:
         self.fallback_policy = self._normalize_fallback_policy(policy)
         self.allow_pow_fallback = self.fallback_policy != "disabled"
+        self._fallback_policy_audit.append({
+            "timestamp": time.time(),
+            "actor": "system",
+            "policy": self.fallback_policy,
+            "source": "configure_fallback_policy",
+        })
         return self.fallback_policy
+
+    def record_fallback_policy_change(self, actor: str, policy: str, reason: str = "") -> Dict[str, Any]:
+        normalized = self._normalize_fallback_policy(policy)
+        self.fallback_policy = normalized
+        self.allow_pow_fallback = normalized != "disabled"
+        event = {
+            "timestamp": time.time(),
+            "actor": actor or "anonymous",
+            "policy": normalized,
+            "reason": reason or "",
+            "source": "rpc",
+        }
+        self._fallback_policy_audit.append(event)
+        self.log(
+            f"fallback_policy updated: actor={event['actor']}, policy={normalized}, reason={event['reason'] or 'n/a'}"
+        )
+        return event
+
+    def get_fallback_policy_audit(self, limit: int = 50) -> List[Dict[str, Any]]:
+        limit = max(1, min(int(limit), 200))
+        return list(self._fallback_policy_audit)[-limit:]
 
     def _pow_fallback_allowed(self, task_pool_size: int) -> bool:
         if self.fallback_policy == "disabled":

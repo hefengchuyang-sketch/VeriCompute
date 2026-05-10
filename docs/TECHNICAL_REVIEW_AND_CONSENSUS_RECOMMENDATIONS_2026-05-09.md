@@ -37,7 +37,7 @@ This loop should take priority over additional token features, more pages, or ex
 | Canonical serialization/hash | Implemented | `core/serialization.py`, `tests/test_canonical_serialization.py`; `Block.compute_hash()` uses `canonical_block_hash()` | Migrate all protocol objects to canonical hashing |
 | Finality API | Partial | `ConsensusEngine.finalize_blocks()`, `get_finalized_height()`, and `chain_getConsensusStatus` exist | Connect reward release to finality and add frontend consumption |
 | PoUW proof boundary | Partial | Existing PoUW execution/proof logic exists | Add explicit proof states: `VALID`, `PENDING_CHALLENGE`, `INVALID` |
-| Automatic PoW fallback control | Implemented foundation | `ConsensusEngine.fallback_policy`, `configure_fallback_policy()`, `main.py`, `config.yaml`, and `tests/test_consensus_fallback_policy.py` | Add admin RPC and operator runbook controls |
+| Automatic PoW fallback control | Implemented foundation | `ConsensusEngine.fallback_policy`, `configure_fallback_policy()`, `main.py`, `config.yaml`, `core/rpc_service.py`, and `tests/test_consensus_fallback_policy*.py` | Add operator runbook controls |
 | Task lifecycle store | Not implemented | No dedicated `TaskStateStore` | Add durable lifecycle tables and event log |
 | Budget locking / reward ledger | Not implemented | UTXO store exists, but task budget lock flow is not formalized | Add `RewardLedger` and task budget/bond locking |
 | Task payload privacy | Implemented foundation | `core/task_encryption.py`, `tests/test_task_encryption.py` | Integrate with `task_create`, result download, worker grants |
@@ -446,8 +446,8 @@ Default production policy:
 
 Remaining implementation tasks:
 
-1. Add an admin RPC for emergency policy changes with audit logging.
-2. Add a runbook requiring two-operator approval before enabling `emergency_pow`.
+1. Add a runbook requiring two-operator approval before enabling `emergency_pow`.
+2. Add policy-change export into the operator dashboard / audit explorer.
 
 ## 8. Verifiable Compute Market Design
 
@@ -691,6 +691,7 @@ tests/test_canonical_serialization.py
 tests/test_proposer_selection.py
 tests/test_task_encryption.py
 tests/test_consensus_fallback_policy.py
+tests/test_consensus_fallback_policy_rpc.py
 ```
 
 Required next tests:

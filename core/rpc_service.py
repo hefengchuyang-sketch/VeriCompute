@@ -1076,6 +1076,60 @@ class NodeRPCService:
             "strategy": strategy,
         }
 
+    def _chain_set_consensus_fallback_policy(self,
+                                             policy: str,
+                                             reason: str = "",
+                                             **kwargs) -> Dict:
+        """Update the consensus PoW fallback policy through an admin-only RPC."""
+        if not self.consensus_engine or not hasattr(self.consensus_engine, "record_fallback_policy_change"):
+            return {
+                "status": "failed",
+                "message": "consensus_engine_unavailable",
+            }
+
+        normalized = (policy or "").strip().lower()
+        allowed = {"disabled", "idle_block_only", "emergency_pow"}
+        if normalized not in allowed:
+            return {
+                "status": "failed",
+                "message": "invalid_fallback_policy",
+                "allowedPolicies": sorted(allowed),
+            }
+        if normalized == "emergency_pow" and not str(reason or "").strip():
+            return {
+                "status": "failed",
+                "message": "reason_required_for_emergency_pow",
+            }
+
+        actor = self._get_auth_user(kwargs.get("auth_context"), "rpc_admin")
+        event = self.consensus_engine.record_fallback_policy_change(
+            actor=actor,
+            policy=normalized,
+            reason=str(reason or "").strip(),
+        )
+        return {
+            "status": "success",
+            "fallbackPolicy": getattr(self.consensus_engine, "fallback_policy", normalized),
+            "allowPowFallback": bool(getattr(self.consensus_engine, "allow_pow_fallback", False)),
+            "auditEvent": event,
+        }
+
+    def _chain_get_consensus_fallback_audit(self, limit: int = 50, **kwargs) -> Dict:
+        """Return recent fallback policy audit events."""
+        if not self.consensus_engine or not hasattr(self.consensus_engine, "get_fallback_policy_audit"):
+            return {
+                "status": "failed",
+                "message": "consensus_engine_unavailable",
+                "events": [],
+            }
+
+        events = self.consensus_engine.get_fallback_policy_audit(limit)
+        return {
+            "status": "success",
+            "events": events,
+            "count": len(events),
+        }
+
     def _sbox_get_encryption_policy(self, **kwargs) -> Dict:
         """获取 S-Box 加密策略。"""
         try:
