@@ -1,14 +1,22 @@
-# POUW-Chain
+# VeriCompute
 
-**Proof of Useful Work for privacy-preserving, verifiable compute.**
+**A privacy-first settlement protocol for verifiable compute.**
 
-POUW-Chain is an experimental blockchain and compute-market protocol that turns real computation into network value. Instead of relying only on empty hash puzzles, the system coordinates useful workloads, verifies delivery, protects sensitive task data, and routes rewards through an auditable on-chain economy.
+![VeriCompute banner](docs/images/vericompute-banner.png)
+
+VeriCompute turns real workloads into blockchain-secured value. Instead of relying only on empty hash puzzles, the system coordinates useful computation, verifies delivery, protects sensitive task data, and routes rewards through an auditable on-chain economy.
 
 The repository contains a Python node implementation, a unified RPC/REST API gateway, a React dashboard, protocol modules for PoUW consensus and compute markets, and validation scripts for security and launch readiness.
 
+## Why It Matters
+
+Cloud compute marketplaces can match buyers and providers, but they rarely solve the trust layer: whether a provider ran the task correctly, preserved privacy, returned the result, and accepted accountable settlement.
+
+VeriCompute focuses on that missing layer. Demand-side users submit encrypted compute tasks, supply-side miners and providers contribute capacity, and the protocol records task execution, verification, disputes, rewards, fees, and treasury routing.
+
 ## Project Thesis
 
-Modern compute is abundant but fragmented. AI researchers, small labs, and independent teams often need reliable GPU capacity, while many operators own underused hardware that still carries fixed cost. POUW-Chain is designed as a privacy-first compute bank: demand-side users submit verifiable compute tasks, supply-side miners and providers contribute capacity, and the protocol records task execution, settlement, disputes, and rewards.
+Modern compute is abundant but fragmented. AI researchers, small labs, and independent teams often need reliable GPU capacity, while many operators own underused hardware that still carries fixed cost. VeriCompute is designed as a privacy-first compute bank and settlement chain for verifiable outsourced work.
 
 Core principles:
 
@@ -55,6 +63,27 @@ Consensus + Ledger + Settlement
 Rewards, Fees, Treasury, Governance
 ```
 
+Core task lifecycle:
+
+```text
+Client submits encrypted task
+        |
+        v
+Provider accepts and executes work
+        |
+        v
+Result hash / proof is submitted
+        |
+        v
+Challenge window opens
+        |
+        v
+Settlement finalizes on-chain
+        |
+        v
+Rewards, fees, burns, and treasury routes are recorded
+```
+
 The system is split into two logical layers:
 
 | Layer | Purpose | Main Capabilities |
@@ -66,7 +95,7 @@ Privacy features sit across both layers through encrypted task payloads, secure 
 
 ## Consensus Modes
 
-POUW-Chain supports multiple consensus profiles through `config.yaml`:
+VeriCompute supports multiple consensus profiles through `config.yaml`:
 
 | Mode | Description |
 | --- | --- |
@@ -151,6 +180,18 @@ pip install -r requirements.txt
 ```
 
 ## Quick Start
+
+### Fastest Local Demo Path
+
+For a quick review, start the unified gateway, open the frontend dashboard, and use the demo flow to submit, execute, query, and settle a compute task locally.
+
+```bash
+python scripts/start_unified_gateway.py --host 127.0.0.1 --port 8000
+
+cd frontend
+npm install
+npm run dev
+```
 
 ### 1. Install Backend Dependencies
 
@@ -403,8 +444,8 @@ Before production deployment:
 
 ## Current Status
 
-The project is organized as a research-to-prototype implementation with substantial module coverage across consensus, compute markets, privacy, governance, API access, and frontend operations. It is suitable for local experimentation, technical review, architecture discussion, and controlled demos. Production use requires hardening, external review, deployment discipline, and real-world adversarial testing.
+The project is organized as a research-to-prototype implementation with substantial module coverage across consensus, compute markets, privacy, governance, API access, and frontend operations. The current goal is local experimentation, protocol review, architecture discussion, and controlled demos, not permissionless production deployment. Production use requires hardening, external review, deployment discipline, and real-world adversarial testing.
 
 ## License
 
-Add the project license file or update this section with the intended license before public release.
+License pending. All rights reserved until a license file is added.

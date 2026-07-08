@@ -1,7 +1,7 @@
 {
-  "name": "pouw-chain-frontend",
+  "name": "vericompute-frontend",
   "version": "1.0.0",
-  "description": "POUW Chain 前端系统 - 算力市场、任务管理、治理机制",
+  "description": "VeriCompute frontend dashboard for compute markets, task management, governance, and settlement.",
   "private": true,
   "type": "module",
   "scripts": {

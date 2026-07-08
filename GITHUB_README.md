@@ -1,14 +1,16 @@
-# POUW-Chain: Proof of Useful Work Blockchain
+# VeriCompute: Verifiable Compute Settlement Protocol
 
-> A privacy-preserving verifiable compute network that transforms real computation tasks into a consensus mechanism.
+> A privacy-first compute market and settlement chain powered by Proof of Useful Work.
 
-[![GitHub](https://img.shields.io/badge/GitHub-POUW--Chain-blue)](https://github.com/your-org/pouw-chain)
-[![License](https://img.shields.io/badge/License-MIT-green)](#license)
+![VeriCompute banner](docs/images/vericompute-banner.png)
+
+[![GitHub](https://img.shields.io/badge/GitHub-VeriCompute-blue)](https://github.com/hefengchuyang-sketch/VeriCompute)
+[![License](https://img.shields.io/badge/License-pending-lightgrey)](#license)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue)](#requirements)
 
 ## Overview
 
-POUW-Chain is a revolutionary blockchain platform that:
+VeriCompute is a blockchain-backed verifiable compute protocol that:
 
 - **Turns useful work into security**: Real computation tasks (AI inference, optimization, hashing) secure the network instead of wasteful hash puzzles
 - **Ensures verifiable compute**: Multi-witness verification, Challenge Game mechanisms, and zero-knowledge proofs guarantee delivery quality
@@ -53,8 +55,8 @@ POUW-Chain is a revolutionary blockchain platform that:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/pouw-chain.git
-cd pouw-chain
+git clone https://github.com/hefengchuyang-sketch/VeriCompute.git
+cd VeriCompute
 
 # Install dependencies
 pip install -r requirements.txt
@@ -254,7 +256,7 @@ const client = new POUWClient();
 ## Directory Structure
 
 ```
-pouw-chain/
+vericompute/
 ├── api/                          # API implementations
 │   ├── unified_gateway.py         # Main API gateway
 │   └── pouw_api_v3.py            # V3.0 REST API
@@ -390,14 +392,14 @@ Contributions are welcome! Please:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+License pending. All rights reserved until a license file is added.
 
 ## Support
 
 - **Documentation**: See the `docs/` directory
 - **Issues**: Report bugs via GitHub Issues
 - **Discussions**: Join our community discussions
-- **Email**: contact@pouw-chain.org
+- **Email**: contact@vericompute.org
 
 ## Acknowledgments
 
@@ -408,14 +410,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Citation
 
-If you use POUW-Chain in your research, please cite:
+If you use VeriCompute in your research, please cite:
 
 ```bibtex
-@software{pouwhain2026,
-  title={POUW-Chain: Proof of Useful Work Blockchain},
+@software{vericompute2026,
+  title={VeriCompute: Verifiable Compute Settlement Protocol},
   author={Your Name},
   year={2026},
-  url={https://github.com/your-org/pouw-chain}
+  url={https://github.com/hefengchuyang-sketch/VeriCompute}
 }
 ```
 

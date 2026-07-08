@@ -1,0 +1,7 @@
+{
+  "model": "gpt-image-2",
+  "prompt": "Create a wide GitHub README hero banner for VeriCompute, a privacy-first verifiable compute settlement protocol. No embedded text. No logos. No random letters. Visualize encrypted compute tasks moving from researchers and AI labs into a decentralized network of GPU provider nodes. In the center, show a clean luminous verification and settlement core, with subtle visual hints of witness verification, challenge windows, privacy shields, audit trails, reward routing, and an on-chain ledger. The image should feel like serious AI/cloud infrastructure plus cryptographic verification, not speculative crypto. Use a professional dark technical palette: deep navy, graphite, cyan, white, and restrained emerald highlights. High detail, clean composition, cinematic but restrained, sharp realistic 3D infrastructure. Wide 2:1 banner composition with clean negative space on the left for title overlay and main network visualization on the right and center. Avoid coins, rockets, trading charts, cartoon style, messy sci-fi symbols, generic blockchain cubes, excessive purple glow, and any visible text.",
+  "image": [],
+  "size": "1792x896",
+  "response_format": "url"
+}

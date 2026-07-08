@@ -1,4 +1,4 @@
-# POUW-Chain Docs Home
+# VeriCompute Docs Home
 
 Role-based reading paths for faster review.
 
@@ -17,7 +17,7 @@ Start here if you need to evaluate thesis, implementation scope, and validation 
 
 Start here if you focus on market fit, defensibility, and commercialization potential.
 
-1. `../README.md` (privacy-first compute bank thesis)
+1. `../README.md` (privacy-first verifiable compute settlement thesis)
 2. `CONSENSUS.md` section on system advantages/comparison
 3. `FEE_MECHANISM.md` (token flow and fee structure)
 4. `DYNAMIC_PRICING_IMPLEMENTATION.md` (market response model)
