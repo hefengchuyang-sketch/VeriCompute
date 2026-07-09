@@ -2,7 +2,7 @@
 
 **A privacy-first settlement protocol for verifiable compute.**
 
-![VeriCompute banner](docs/images/vericompute-banner.png)
+![VeriCompute banner](docs/images/vericompute-banner.jpg)
 
 VeriCompute turns real workloads into blockchain-secured value. Instead of relying only on empty hash puzzles, the system coordinates useful computation, verifies delivery, protects sensitive task data, and routes rewards through an auditable on-chain economy.
 

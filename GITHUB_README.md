@@ -2,7 +2,7 @@
 
 > A privacy-first compute market and settlement chain powered by Proof of Useful Work.
 
-![VeriCompute banner](docs/images/vericompute-banner.png)
+![VeriCompute banner](docs/images/vericompute-banner.jpg)
 
 [![GitHub](https://img.shields.io/badge/GitHub-VeriCompute-blue)](https://github.com/hefengchuyang-sketch/VeriCompute)
 [![License](https://img.shields.io/badge/License-pending-lightgrey)](#license)
